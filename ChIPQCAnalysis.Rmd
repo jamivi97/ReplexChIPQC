@@ -1,0 +1,416 @@
+---
+#=================================================================
+#                       YAML Configuration
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Loads parameters passed from command line wrapper script.  Sets
+#header information for knitted markdown, including paramterized
+#title, author, and system determined date of knitting.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+params:
+  input: "Analysis.rds"
+  title: "ReplexChIPQC Analysis"
+  echo: FALSE
+  facetX: "Tissue"
+  facetY: "Factor"
+  facetZ: "Replicate"
+  palette: "Set1"
+title: "`r params$title`"
+author: "Jacob Vieira"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+#=================================================================
+---
+
+```{r Dependencies, echo = params$echo, message = FALSE}
+#=================================================================
+#                         Package Loading
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Loads the markdown's dependency packages: ChIPQC, knitr,
+#reshape2, and RColorBrewer.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+require(ChIPQC)
+require(knitr)
+require(reshape2)
+require(RColorBrewer)
+#=================================================================
+
+#=================================================================
+#                    ChIPQC Utility Functions
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Loads ChIPQC hidden utility functions list2matrix and extend that
+#cannot normally be accessed by end users.  (Taken from ChIPQC
+#source.)
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+extend <- function(vec,len,bNAasZero=TRUE) {
+   if(bNAasZero){
+      vec[is.na(vec)]=0
+   }
+   vlen = length(vec)
+   if(vlen < len) {
+      toadd = rep(0,len-vlen)
+      vec = c(vec,toadd)
+   }
+   return(vec)
+}
+list2matrix <- function(vlist,bNAasZero=TRUE) {
+   if(class(vlist)=="list"){
+      maxlen = max(sapply(vlist,length))
+      vlist = lapply(vlist,function(x){extend(x,maxlen,bNAasZero)})
+      res = matrix(0,maxlen,length(vlist))
+      for(i in 1:length(vlist)) {
+         res[,i] = vlist[[i]]
+      }
+      colnames(res) = names(vlist)
+      rownames(res) = 1:nrow(res)
+      return(res)
+   }else{
+      return(vlist)
+   }
+}
+#=================================================================
+```
+
+```{r Mode/Definitions, echo = params$echo}
+#=================================================================
+#                       Mode Determination
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Determines if script is running in stitch or experiment mode
+#based on format of input.  Input files ending in .csv will select
+#stitch mode (stitch sample sheet), while input files ending in
+#.rds will select experiment mode (ChIPQC experiment).  If the
+#input is neither of these file types, knitting is stopped with an
+#error message.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+if (grepl(params$input, pattern = ".csv")) {
+  QCmode <- "stitch"
+} else if (grepl(params$input, pattern = ".rds")) {
+  QCmode <- "experiment"
+} else {
+  stop("Invalid input format; must be .csv (stitch sample sheet) or .rds (ChIPQC experiment).")
+}
+#=================================================================
+
+#=================================================================
+#                     Definitions and Metadata
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Defines many frequently called variables and options derived from
+#specified parameters.  Determines dimensions for figures.
+#Extracts metadata from input.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+OPecho <- params$echo
+OPfacetX <- params$facetX
+OPfacetY <- params$facetY
+OPfacetZ <- params$facetZ
+OPfacet <- as.formula(paste(OPfacetY, "~", OPfacetX))
+switch(QCmode,
+  stitch = {
+    QCstitch <- read.csv(params$input, stringsAsFactors = FALSE)
+    MNblacklist <- c("rds", "Replicate")
+    for (MNcol in colnames(QCstitch)) {
+      if (!(MNcol %in% MNblacklist) && !is.null(MNcol)) {
+        QCstitch[, MNcol] <- make.names(QCstitch[, MNcol])
+      }
+    }
+    STanalyses <- NULL
+    STnPeaks <- NULL
+    for (STrow in seq(nrow(QCstitch))) {
+      STrds <- readRDS(paste(QCstitch[STrow, "rds"]))
+      STanalyses <- c(STanalyses, STrds)
+      STnPeaks <- c(STnPeaks, length(STrds@ranges@width))
+    }
+    OPheight <- 2*length(unique(QCstitch[, OPfacetY]))
+    QCmetadata <- cbind(QCstitch, Peaks = STnPeaks)
+  },
+  experiment = {
+    QCanalysis <- readRDS(params$input)
+    QCmetadata <- QCmetadata(QCanalysis)
+    colnames(QCmetadata)[1] <- "SampleID"
+    OPheight <- 2*length(unique(QCmetadata[, OPfacetY]))
+  }
+)
+OPwidth <- 9
+#=================================================================
+```
+
+```{r ColorBrewer, echo = OPecho}
+#=================================================================
+#                     RColorBrewer Palette
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Checks palette parameter against a list of all RColorBrewer
+#qualitative palette names to ensure a valid palette has been
+#passed.  Stops script if check fails.  Otherwise, sets specified
+#palette.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CKpalettes <- c("Set1", "Set2", "Set3", "Pastel1", "Pastel2", "Accent", "Dark2", "Paired")
+if (!params$palette %in% CKpalettes) {
+  stop("Palette argument must be the name of an RColorBrewer qualitative palette.")
+}
+OPpalette <- brewer.pal(n = 8, name = params$palette)
+#=================================================================
+```
+
+```{r ExtractData, echo = OPecho}
+#=================================================================
+#                         Extract Data
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Extracts data from RDS files into requisite dataframes for each
+#plot.  Runs renaming necessary to utilize data from multiple rds
+#files in stitch mode.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+switch(QCmode,
+  stitch = {
+    STsampleIDs <- QCstitch[, "SampleID"]
+    QCmetrics <- QCmetrics(STanalyses)
+    rownames(QCmetrics) <- STsampleIDs
+    CHdata <- coveragehistogram(STanalyses)
+    colnames(CHdata) <- STsampleIDs
+    CCdata <- crosscoverage(STanalyses)
+    colnames(CCdata) <- STsampleIDs
+    PPdata <- averagepeaksignal(STanalyses)
+    colnames(PPdata) <- STsampleIDs
+    FRrip <- rip(STanalyses)
+    names(FRrip) <- STsampleIDs
+    FRmapped <- mapped(STanalyses)
+    names(FRmapped) <- STsampleIDs
+    CPpeaks <- peaks(STanalyses)
+    CPpeakCountList <- sapply(CPpeaks, function(x)elementMetadata(x)$Counts)
+    names(CPpeakCountList) <- STsampleIDs
+  },
+  experiment = {
+    QCmetrics <- QCmetrics(QCanalysis)
+    CHdata <- coveragehistogram(QCanalysis)
+    CCdata <- crosscoverage(QCanalysis)
+    PPdata <- averagepeaksignal(QCanalysis)
+    FRrip <- rip(QCanalysis)
+    FRmapped <- mapped(QCanalysis)
+    CPpeaks <- peaks(QCanalysis)
+    CPpeakCountList <- sapply(CPpeaks, function(x)elementMetadata(x)$Counts)
+  }
+)
+#=================================================================
+```
+
+```{r SummaryTable, echo = OPecho}
+#=================================================================
+#                         Summary Kable
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Extracts relevant subset of metadata and merges it with metrics
+#to create a summary kable to succinctly display quality control
+#information.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+QCsummaryMetadata <- QCmetadata[, c(
+  "SampleID", 
+  OPfacetX,
+  OPfacetY,
+  OPfacetZ,
+  "Peaks"
+)]
+QCsummary <- merge(
+  QCsummaryMetadata, QCmetrics,
+  by.x = 1, by.y = 0, all = TRUE
+)
+#=================================================================
+kable(QCsummary, caption="**ChIPQC Summary Table**")
+```
+
+```{r CoverageHistogram, echo = OPecho, fig.width = OPwidth, fig.height = OPheight}
+#=================================================================
+#              Coverage Histogram Data Manipulation
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Manipulates coverage histogram data.  Melts it and defines new
+#column names.  Creates a column that applies log10 to bp data.
+#Appends metadata via merge.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CHdata <- melt(CHdata)
+colnames(CHdata)[1:3] <- c("Depth", "Sample", "bp")
+CHdata$log10_bp <- log10(CHdata$bp)
+CHdata <- merge(CHdata, QCmetadata, by.x = 2, by.y = 1)
+#=================================================================
+
+#=================================================================
+#                   Coverage Histogram ggplot
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates a line ggplot of coverage histogram data, with Depth
+#on the x axis and log10 BP on the y axis.  Facets and colors by
+#specified variables.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CHplot <- ggplot(CHdata)+
+  aes(x = Depth, y = log10_bp, group = Sample)+
+  geom_line(na.rm = TRUE, size = 0.67)+
+  xlim(0, 100)+
+  facet_grid(OPfacet, labeller = label_both)+
+  ggtitle("Coverage Histogram") + xlab("Depth") + ylab("log10 BP")
+if(length(unique(QCmetadata[, OPfacetZ])) > 1) {
+  CHplot <- CHplot+
+    scale_color_manual(values = OPpalette)+
+    aes_string(color = paste(OPfacetZ))
+}
+#=================================================================
+CHplot
+```
+
+```{r CrossCoverage, echo = OPecho, fig.width = OPwidth, fig.height = OPheight}
+#=================================================================
+#                 Cross Coverage Data Manipulation
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Manipulates cross coverage data.  Melts it using its shift length
+#as id variable, and defines new column names.  Facets and colors
+#by specified variables.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CCshiftLength <- nrow(CCdata)
+CCdata <- data.frame("CCshiftLength" = seq(1, CCshiftLength), CCdata)
+CCdata <- melt(CCdata, id.vars = c("CCshiftLength"))
+colnames(CCdata)[1:3] <- c("Shift_Size", "Sample", "CC_Score")
+CCdata <- merge(CCdata, QCmetadata, by.x = 2, by.y = 1)
+#=================================================================
+
+#=================================================================
+#                     Cross Coverage ggplot
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates a line ggplot of cross coverage data, with Shift Size on
+#the x axis and Cross Coverage Score on the y axis.  Facets and
+#colors by specified variables.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CCplot <- ggplot(CCdata)+
+  aes(x = Shift_Size, y = CC_Score, group = Sample)+
+  geom_line(na.rm = TRUE, size = 0.67)+
+  xlim(0, CCshiftLength)+
+  facet_grid(OPfacet, labeller = label_both)+
+  ggtitle("Cross Coverage") + xlab("Shift Size") + ylab("CC Score")
+if(length(unique(QCmetadata[, OPfacetZ])) > 1) {
+  CCplot <- CCplot+
+    scale_color_manual(values = OPpalette)+
+    aes_string(color = paste(OPfacetZ))
+}
+#=================================================================
+CCplot
+```
+
+```{r PeakProfile, echo = OPecho, fig.width = OPwidth, fig.height = OPheight}
+#=================================================================
+#                   Peak Profile Data Manipulation
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Calculates peak width and appends it to peak profile data.  Melts
+#peak profile data using its width as an id variable, and defines
+#new column names.  Appends metadata via merge.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+PPwidth <- seq(-nrow(PPdata) / 2, nrow(PPdata) / 2)[-(nrow(PPdata) / 2 + 1)]
+PPdata <- data.frame(PPwidth, PPdata)
+PPdata <- melt(PPdata, id.vars = c("PPwidth"))
+colnames(PPdata)[1:3] <- c("Distance", "Sample", "Signal")
+PPdata <- merge(PPdata, QCmetadata, by.x = 2, by.y = 1)
+#=================================================================
+
+#=================================================================
+#                       Peak Profile ggplot
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates a line ggplot of peak profile data, with Distance on the
+#x axis and Signal on the y axis.  Facets and colors by specified
+#variables.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+PPplot <- ggplot(PPdata)+
+  aes(x = Distance, y = Signal, group = Sample)+
+  geom_line(size = 0.67)+
+  facet_grid(OPfacet, labeller = label_both)+
+  ggtitle("Average Peak Profiles") + xlab("Distance") + ylab("Signal")
+if(length(unique(QCmetadata[, OPfacetZ])) > 1) {
+  PPplot <- PPplot+
+    scale_color_manual(values = OPpalette)+
+    aes_string(color = paste(OPfacetZ))
+}
+#=================================================================
+PPplot
+```
+
+```{r ReadsInPeaks, echo = OPecho, fig.width = OPwidth, fig.height = OPheight}
+#=================================================================
+#           Fraction of Reads in Peaks Data Manipulation
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates fraction of reads in peaks data frame from mapped reads
+#and reads in peaks values.  Converts fraction values to
+#percentages.  Melts data with sample as id variable, and defines
+#new column names.  Appends metadata via merge.  Factorizes reads
+#inside and outside of peaks.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+FRmapped <- FRmapped[!is.na(FRrip)]
+FRrip <- FRrip[!is.na(FRrip)]
+FRdata <- data.frame(Sample = names(FRrip), Inside = FRrip, Outside = FRmapped - FRrip)
+FRperI <- FRdata[, "Inside"] / rowSums(FRdata[,c("Inside", "Outside")]) * 100
+FRperO <- FRdata[, "Outside"] / rowSums(FRdata[,c("Inside", "Outside")]) * 100
+FRdata[, "Inside"] <- FRperI
+FRdata[, "Outside"] <- FRperO
+FRdata <- melt(FRdata, id.vars = c("Sample"))
+colnames(FRdata)[1:3] <- c("Sample", "Reads", "FRIP")
+FRdata <- merge(FRdata, QCmetadata, by.x = 1, by.y = 1)
+FRdata$Reads <- factor(as.vector(FRdata$Reads), levels = c("Outside","Inside"))
+#=================================================================
+
+#=================================================================
+#               Fraction of Reads in Peaks ggplot
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates a stacked bar ggplot with percentage of reads inside and
+#outside of peaks on the y axis.  Facets and breaks x axis by
+#specified variables.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+FRplot <- ggplot(FRdata)+
+  aes(y = FRIP, fill = Reads)+
+  geom_bar(stat = "identity")+
+  facet_grid(OPfacet, labeller = label_both)+
+  theme(panel.background = element_blank())+
+  scale_fill_manual(values=c("#EBEBEB","#000000"))+
+  ggtitle("Percentage of Reads in Peaks") + xlab("Sample") + ylab("Percentage")
+if(length(unique(QCmetadata[, OPfacetZ])) > 1) {
+  FRplot <- FRplot+
+    aes_string(x = paste(OPfacetZ))+
+    xlab(OPfacetZ)
+} else {
+  FRplot <- FRplot+
+    aes(x = 1)+
+    xlab("Sample")+
+    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+}
+#=================================================================
+FRplot
+```
+
+```{r CountsInPeaks, echo = OPecho, fig.width = OPwidth, fig.height = OPheight}
+#=================================================================
+#           Counts of Reads in Peaks Data Manipulation
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates matrix counts of reads in peaks data from list.  Melts
+#data and defines new column names.  Applies log 10 to number of
+#counts in peaks.  Appends metadata via merge.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CPdata <- list2matrix(CPpeakCountList)
+CPdata <- melt(CPdata)
+colnames(CPdata)[1:3] <- c("PeakNumber", "Sample", "CountsInPeaks")
+CPdata$Log10CountsInPeaks <- log10(CPdata$CountsInPeaks)
+CPdata <- merge(CPdata, QCmetadata, by.x = 2, by.y = 1)
+#=================================================================
+
+#=================================================================
+#               Counts of Reads in Peaks ggplot
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Creates a box and whisker ggplot of count of reads in peaks data,
+#with log 10 Counts on the y axis.  Facets and breaks x axis by
+#specified variables.
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CPplot <- ggplot(CPdata)+
+  aes(y = Log10CountsInPeaks)+
+  geom_boxplot(na.rm=TRUE, fill = "white")+
+  facet_grid(OPfacet, labeller = label_both)+
+  ggtitle("Number of Counts in Peaks") + ylab("Log 10 Counts in Peaks")
+CPdata$Replicate <- as.integer(CPdata$Replicate)
+if(length(unique(QCmetadata[, OPfacetZ])) > 1) {
+  CPplot <- CPplot+
+    aes_string(x = paste(OPfacetZ))+
+    xlab(OPfacetZ)
+} else {
+  CPplot <- CPplot+
+    aes(x = 1)+
+    xlab("Sample")+
+    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+}
+#=================================================================
+CPplot
+```
