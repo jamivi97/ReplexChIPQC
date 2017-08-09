@@ -1,7 +1,7 @@
 # ReplexChIPQC
 ReplexChIPQC is a pair of R scripts and an R markdown replicating and extending the functionality of the R package ChIPQC.
 ## Dependencies
-**ReplexChIPQC requires the follow R packages**:  
+**ReplexChIPQC requires the following R packages**:  
 ChIPQC: https://bioconductor.org/packages/release/bioc/html/ChIPQC.html  
 argparse: https://cran.r-project.org/web/packages/argparse/index.html  
 BiocParallel: https://bioconductor.org/packages/release/bioc/html/BiocParallel.html  
