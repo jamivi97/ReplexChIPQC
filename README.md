@@ -56,12 +56,12 @@ Rscript ChIPQCAnalysis.R [-h] [-i INPUT] [-o OUTPUT] [-t TITLE] [-e ECHO] [-x FA
 ```
 `-h` returns a command line help message then exits.  
 `-i` is a mandatory argument specifying the file path to the input (**Stitch Mode**: .csv; **Experiment Mode**: .rds)
-`-o` is a mandatory argument specifying the file path to the output (.html).
-`-t` is an optional argument specifying an in-document title for the analysis markdown.  Defaults to "ReplexChIPQC Analysis".
-`-e` is an optional argument specifying whether or not to echo the source code in the markdown (_TRUE_ or _FALSE_).  Defaults to _FALSE_.
-`-x` is an optional argument specifying the metadata used to facet the columns of the report's plots.  Defaults to "Tissue".
-`-y` is an optional argument specifying the metadata used to facet the rows of the report's plots.  Defaults to "Factor".
-`-z` is an optional argument specifying the metadata used to color the Coverage Histogram, Cross Coverage, and Peak Profile plots, and used as the x axis of the Reads in Peaks and Counts in Peaks plots.  Defaults to "Replicate".
+`-o` is a mandatory argument specifying the file path to the output (.html).  
+`-t` is an optional argument specifying an in-document title for the analysis markdown.  Defaults to "ReplexChIPQC Analysis".  
+`-e` is an optional argument specifying whether or not to echo the source code in the markdown (_TRUE_ or _FALSE_).  Defaults to _FALSE_.  
+`-x` is an optional argument specifying the metadata used to facet the columns of the report's plots.  Defaults to "Tissue".  
+`-y` is an optional argument specifying the metadata used to facet the rows of the report's plots.  Defaults to "Factor".  
+`-z` is an optional argument specifying the metadata used to color the Coverage Histogram, Cross Coverage, and Peak Profile plots, and used as the x axis of the Reads in Peaks and Counts in Peaks plots.  Defaults to "Replicate".  
 `-p` is an optional argument specifying an RColorBrewer palette to use for coloring (if there is more than one possibility for the facetZ parameter).  Defaults to "Set1", must be the name of a **qualitative** RColorBrewer palette.  For more information refer to [RColorBrewer's reference manual](https://cran.r-project.org/web/packages/RColorBrewer/RColorBrewer.pdf).
 ### Stitch Mode
 **Stitch Mode** operates on **sample-wise** rds files, and stitches the individual rds files together into a single analysis.  To accomplish this, `-i` must be the path to a Stitch Sample Sheet .csv containing all samples to be included.
@@ -76,6 +76,7 @@ Rscript ChIPQCAnalysis.R [-h] [-i INPUT] [-o OUTPUT] [-t TITLE] [-e ECHO] [-x FA
 | kc_mod_2   | kc     | mod    | 2         | analyses/06_kc_mod.ChIPQC.rds   | 
 | kc_shep_1  | kc     | shep   | 1         | analyses/07_kc_mod.ChIPQC.rds   | 
 | kc_shep_2  | kc     | shep   | 2         | analyses/08_kc_shep.ChIPQC.rds  | 
+
 This Stitch Sample Sheet contains the data used to generate the example plots.
 * **SampleID** is unique identifier string for each sample.
 * **Tissue**, **Factor**, and **Replicate** contain metadata values for each sample.
@@ -88,7 +89,7 @@ Rscript ChIPQCAnalysis.R -i=experiments/ExampleStitchSampleSheet.csv -o=reports/
 ```
 This will generate the report `ExampleAnalysis.html` from the stitch sample sheet `ExampleStitchSampleSheet.csv` with the in-document title `"Example QC Analysis"`.  (Echo, faceting, and palette are left as their defaults).
 ### Experiment Mode
-**Experiment Mode** operates on **experiment-wise** rds files.  For this mode, `-i` must be an **experiment-wise** rds file, as these already contain all samples and metadata.
+**Experiment Mode** operates on **experiment-wise** rds files.  For this mode, `-i` must be an **experiment-wise** rds file, which already contains all samples and metadata.
 ##### Example Command:
 ```shell
 Rscript ChIPQCAnalysis.R -i=analyses/ExampleAnalysis.ChIPQC.rds -o=reports/ExampleAnalysis.html -t="Example QC Analysis"
