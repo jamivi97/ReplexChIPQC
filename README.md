@@ -9,12 +9,12 @@ This stage of the ReplexChIPQC pipeline runs ChIPQC's quality control calculatio
 ```shell
 Rscript ChIPQCrds.R [-h] [-i INPUT] [-p PEAKS] [-o OUTPUT] [-c CHROMOSOMES...] [-w WORKERS]
 ```
-`-h` returns a command line help message then exits.
-`-i` is a mandatory argument specifying the file path to the input (**sample-wise**: .bam; **experiment-wise**: .csv)
-`-p` is a mandatory argument for **sample-wise mode only** specifying the file path to called peaks for the sample.
-`-o` is a mandatory argument specifying the file path to the output (.rds).
-`-c` is an optional argument specifying a space separated list of chromosomes to perform analysis on.  If none are specified, defaults to analyzing all chromosomes present in samples.
-`-w` is an optional argument for **experiment-wise mode only** specifying the number of worker cpus for running parallel analysis via biocparallel.  Defaults to 1 (serial computing).
+`-h` returns a command line help message then exits.  
+`-i` is a mandatory argument specifying the file path to the input (**sample-wise**: .bam; **experiment-wise**: .csv)  
+`-p` is a mandatory argument for **sample-wise mode only** specifying the file path to called peaks for the sample.  
+`-o` is a mandatory argument specifying the file path to the output (.rds).  
+`-c` is an optional argument specifying a space separated list of chromosomes to perform analysis on.  If none are specified, defaults to analyzing all chromosomes present in samples.  
+`-w` is an optional argument for **experiment-wise mode only** specifying the number of worker cpus for running parallel analysis via biocparallel.  Defaults to 1 (serial computing).  
 #### Sample-Wise
 Sample-wise rds generation performs analysis on an individual sample's .bam file and corresponding called peaks.  The output rds contains all calculations for that individual sample, sans metadata.  To generate this flavor of rds, `-i` must be the path to a sample's .bam file, and `-p` must be the path to the corresponding peaks file.
 ##### Example Command:
