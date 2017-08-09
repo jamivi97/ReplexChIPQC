@@ -1,0 +1,9 @@
+SampleID,Tissue,Factor,Replicate,rds
+bg3_mod_1,bg3,mod,1,analyses/01_bg3_mod.ChIPQC.rds
+bg3_mod_2,bg3,mod,2,analyses/02_bg3_mod.ChIPQC.rds
+bg3_shep_1,bg3,shep,1,analyses/03_bg3_shep.ChIPQC.rds
+bg3_shep_2,bg3,shep,2,analyses/04_bg3_shep.ChIPQC.rds
+kc_mod_1,kc,mod,1,analyses/05_kc_mod.ChIPQC.rds
+kc_mod_2,kc,mod,2,analyses/06_kc_mod.ChIPQC.rds
+kc_shep_1,kc,shep,1,analyses/07_kc_mod.ChIPQC.rds
+kc_shep_2,kc,shep,2,analyses/08_kc_shep.ChIPQC.rds

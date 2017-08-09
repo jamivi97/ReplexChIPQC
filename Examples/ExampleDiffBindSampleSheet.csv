@@ -1,0 +1,9 @@
+SampleID,Tissue,Factor,Replicate,bamReads,Peaks,PeakCaller
+bg3_mod_1,bg3,mod,1,reads/01_bg3_mod.bam,peaks/01_bg3_mod.narrowPeak,narrow
+bg3_mod_2,bg3,mod,2,reads/02_bg3_mod.bam,peaks/02_bg3_mod.narrowPeak,narrow
+bg3_shep_1,bg3,shep,1,reads/03_bg3_shep.bam,peaks/03_bg3_shep.narrowPeak,narrow
+bg3_shep_2,bg3,shep,2,reads/04_bg3_shep.bam,peaks/04_bg3_shep.narrowPeak,narrow
+kc_mod_1,kc,mod,1,reads/05_kc_mod.bam,peaks/05_kc_mod.narrowPeak,narrow
+kc_mod_2,kc,mod,2,reads/06_kc_mod.bam,peaks/06_kc_mod.narrowPeak,narrow
+kc_shep_1,kc,shep,1,reads/07_kc_mod.bam,peaks/07_kc_mod.narrowPeak,narrow
+kc_shep_2,kc,shep,2,reads/08_kc_shep.bam,peaks/08_kc_shep.narrowPeak,narrow
