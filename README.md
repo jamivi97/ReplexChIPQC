@@ -7,8 +7,7 @@ The scripts of ReplexChIPQC follow this workflow, beginning with indexed ChIP-se
 This stage of the ReplexChIPQC pipeline runs ChIPQC's quality control calculations on input data, and stores the results of this analysis in R readable .rds files, which are then passed to the second stage.
 ##### Usage:
 ```shell
-Rscript ChIPQCrds.R [-h] [-i INPUT] [-p PEAKS] [-o OUTPUT]
-                    [-c CHROMOSOMES...] [-w WORKERS]
+Rscript ChIPQCrds.R [-h] [-i INPUT] [-p PEAKS] [-o OUTPUT] [-c CHROMOSOMES...] [-w WORKERS]
 ```
 `-h` returns a command line help message then exits.
 `-i` is a mandatory argument specifying the file path to the input (**sample-wise**: .bam; **experiment-wise**: .csv)
@@ -25,6 +24,7 @@ Rscript ChIPQCrds.R -i=reads/01_bg3_mod.bam -p=peaks/01_bg3_mod.narrowPeak -o=an
 This will generate a sample-wise .rds file titled  `01_bg3_mod.ChIPQC.rds` with analysis on the X and Y chromosomes from the input sample `01_bg3_mod.bam` and its peaks `01_bg3_mod.narrowPeak`.
 #### Experiment-Wise
 Experiment-wise rds generation performs analysis on a DiffBind Sample Sheet .csv file.  The output rds contains calculations for all samples specified, including their DiffBind restricted metadata.  To generate this flavor of rds, `-i` must be the path to the experiment's DiffBind Sample Sheet .csv file.
+
 | SampleID   | Tissue | Factor | Replicate | bamReads              | Peaks                        | PeakCaller | 
 |------------|--------|--------|-----------|-----------------------|------------------------------|------------| 
 | bg3_mod_1  | bg3    | mod    | 1         | reads/01_bg3_mod.bam  | peaks/01_bg3_mod.narrowPeak  | narrow     | 
@@ -35,6 +35,7 @@ Experiment-wise rds generation performs analysis on a DiffBind Sample Sheet .csv
 | kc_mod_2   | kc     | mod    | 2         | reads/06_kc_mod.bam   | peaks/06_kc_mod.narrowPeak   | narrow     | 
 | kc_shep_1  | kc     | shep   | 1         | reads/07_kc_mod.bam   | peaks/07_kc_mod.narrowPeak   | narrow     | 
 | kc_shep_2  | kc     | shep   | 2         | reads/08_kc_shep.bam  | peaks/08_kc_shep.narrowPeak  | narrow     | 
+
 This DiffBind sample sheet contains the data used to generate the example plots.
 * **SampleID** is unique identifier string for each sample.
 * **Tissue**, **Factor**, and **Replicate** contain metadata values for each sample.
