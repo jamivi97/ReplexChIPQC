@@ -5,10 +5,10 @@ ReplexChIPQC is a pair of R scripts and an R markdown replicating and extending 
 ChIPQC: https://bioconductor.org/packages/release/bioc/html/ChIPQC.html  
 argparse: https://cran.r-project.org/web/packages/argparse/index.html  
 BiocParallel: https://bioconductor.org/packages/release/bioc/html/BiocParallel.html  
-knitr: https://cran.r-project.org/web/packages/knitr/index.html
-rmarkdown: https://cran.r-project.org/web/packages/rmarkdown/index.html
-reshape2: https://cran.r-project.org/web/packages/reshape2/index.html
-RColorBrewer: https://cran.r-project.org/web/packages/RColorBrewer/index.html
+knitr: https://cran.r-project.org/web/packages/knitr/index.html  
+rmarkdown: https://cran.r-project.org/web/packages/rmarkdown/index.html  
+reshape2: https://cran.r-project.org/web/packages/reshape2/index.html  
+RColorBrewer: https://cran.r-project.org/web/packages/RColorBrewer/index.html  
 ## Workflow
 ![ReplexChIPQC Workflow Diagram](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ReplexChIPQCFlowchart.png)
 The scripts of ReplexChIPQC follow this workflow, beginning with indexed ChIP-seq .bam files and their corresponding called peaks and ending with an analysis html document.  It is broken into two major scripts, or stages, both of which are called from the command line and passed parameters using argparse.  The scripts can follow two pathways of analysis, both of which will be explained here.
