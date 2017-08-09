@@ -1,5 +1,14 @@
 # ReplexChIPQC
 ReplexChIPQC is a pair of R scripts and an R markdown replicating and extending the functionality of the R package ChIPQC.
+## Dependencies
+**ReplexChIPQC requires the follow R packages**:  
+ChIPQC: https://bioconductor.org/packages/release/bioc/html/ChIPQC.html  
+argparse: https://cran.r-project.org/web/packages/argparse/index.html  
+BiocParallel: https://bioconductor.org/packages/release/bioc/html/BiocParallel.html  
+knitr: https://cran.r-project.org/web/packages/knitr/index.html
+rmarkdown: https://cran.r-project.org/web/packages/rmarkdown/index.html
+reshape2: https://cran.r-project.org/web/packages/reshape2/index.html
+RColorBrewer: https://cran.r-project.org/web/packages/RColorBrewer/index.html
 ## Workflow
 ![ReplexChIPQC Workflow Diagram](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ReplexChIPQCFlowchart.png)
 The scripts of ReplexChIPQC follow this workflow, beginning with indexed ChIP-seq .bam files and their corresponding called peaks and ending with an analysis html document.  It is broken into two major scripts, or stages, both of which are called from the command line and passed parameters using argparse.  The scripts can follow two pathways of analysis, both of which will be explained here.
@@ -95,3 +104,25 @@ This will generate the report `ExampleAnalysis.html` from the stitch sample shee
 Rscript ChIPQCAnalysis.R -i=analyses/ExampleAnalysis.ChIPQC.rds -o=reports/ExampleAnalysis.html -t="Example QC Analysis"
 ```
 This will generate the report `ExampleAnalysis.html` from the **experiment-wise** rds file `ExampleAnalysis.ChIPQC.rds` with the in-document title `"Example QC Analysis"`.  (Echo, faceting, and palette are left as their defaults).
+## Output Visualizations
+Both paths of the scripts lead to the same destination output, but in different ways.  The **sample-wise** -> **stitch mode** path has greater flexibility and eliminates redundancy from the pipeline, and as such is recommended where possible.  The output contains the following table and plots:
+
+![ReplexChIPQC Summary Table](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ExampleSummaryTable.png)
+Summary table concisely displaying metrics and metadata for samples.  Will display **SampleID**, **Faceting Variables** (Tissue, Factor, and Replicate in this case), and assorted calculated metrics.
+
+*Check and X marks have been added with post-processing to mark relative quality.  The check mark indicates the best plot in the set, the X mark indicates the worst.
+
+![ReplexChIPQC Coverage Histogram](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ExampleCoverageHistogram.png)
+Coverage histogram plotting log10 of base pairs of the genome against read depth.  Good samples have greater numbers at higher depths, and contain little noise.
+
+![ReplexChIPQC Cross Coverage](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ExampleCrossCoverage.png)
+Cross coverage plot showing correlation of opposite strands’ reads.  The maximum is the size of the protein binding site in base pairs.  Good samples have a “phantom” peak followed by a significantly higher true peak.
+
+![ReplexChIPQC Peak Profile](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ExamplePeakProfile.png)
+Peak profile plot showing the average signal profile of all called peaks for a sample. Noise will appear in samples with small numbers of called peaks. Good samples will have higher maximum signal and smoother profiles.
+
+![ReplexChIPQC Reads in Peaks](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ExampleReadsInPeaks.png)
+Stacked bar plot showing percentage of reads inside and outside of peaks.  Good samples will have higher proportions of reads inside of peaks.
+
+![ReplexChIPQC Counts in Peaks](https://raw.githubusercontent.com/jmvieira97/ReplexChIPQC/master/Examples/ExampleCountsInPeaks.png)
+Box and whisker plot showing log10 of total count of reads in each peak.  Log scale has been added to improve plot readability.  Good samples will have counts that cluster higher.
