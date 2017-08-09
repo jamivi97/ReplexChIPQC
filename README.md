@@ -64,7 +64,7 @@ This stage of the ReplexChIPQC pipeline takes the quality control calculations s
 Rscript ChIPQCAnalysis.R [-h] [-i INPUT] [-o OUTPUT] [-t TITLE] [-e ECHO] [-x FACETX] [-y FACETY] [-z FACETZ] [-p PALETTE]
 ```
 `-h` returns a command line help message then exits.  
-`-i` is a mandatory argument specifying the file path to the input (**Stitch Mode**: .csv; **Experiment Mode**: .rds)
+`-i` is a mandatory argument specifying the file path to the input (**Stitch Mode**: .csv; **Experiment Mode**: .rds)  
 `-o` is a mandatory argument specifying the file path to the output (.html).  
 `-t` is an optional argument specifying an in-document title for the analysis markdown.  Defaults to "ReplexChIPQC Analysis".  
 `-e` is an optional argument specifying whether or not to echo the source code in the markdown (_TRUE_ or _FALSE_).  Defaults to _FALSE_.  
